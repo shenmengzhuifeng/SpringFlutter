@@ -1,0 +1,29 @@
+buildscript {
+    ext {
+        springBootVersion = '1.5.8.RELEASE'
+        gradleDockerVersion = '1.2'
+        gradleDMVersion = '1.0.3.RELEASE'
+
+    }
+    repositories {
+        maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
+        maven { url 'https://repo.spring.io/libs-milestone' }
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("se.transmode.gradle:gradle-docker:${gradleDockerVersion}")
+        classpath("io.spring.gradle:dependency-management-plugin:${gradleDMVersion}")
+    }
+}
+
+
+allprojects {
+    repositories() {
+        maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
+        maven { url 'https://repo.spring.io/libs-milestone' }
+        mavenCentral()
+        jcenter()
+    }
+}
