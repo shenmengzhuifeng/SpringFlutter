@@ -1,0 +1,6 @@
+.idea
+.gradle/
+Code/out/
+Code/Code.iml
+.idea/workspace.xml
+Code/.DS_Store
