@@ -1,6 +1,7 @@
 package com.tw.cloud.controller;
 
 import com.tw.cloud.bean.request.AuthenticationRequest;
+import com.tw.cloud.bean.user.CustomerInfoReply;
 import com.tw.cloud.component.JwtAuthenticationTokenFilter;
 import com.tw.cloud.service.UserService;
 import org.slf4j.Logger;
@@ -35,10 +36,10 @@ public class UserController {
 
     @RequestMapping(value = UnifyApiUri.UserApi.API_AUTH_LOGIN,
             method = RequestMethod.POST,produces= MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public CommonResp<String> login(@RequestBody AuthenticationRequest authenticationRequest) {
-
-        LOGGER.info(authenticationRequest.toString());
-
-        return new CommonResp<>(Constants.RESULT_OK,"","","获取成功");
+    public CommonResp<CustomerInfoReply> login(@RequestBody AuthenticationRequest authenticationRequest) {
+        LOGGER.info("login info==>" + authenticationRequest.toString());
+        CustomerInfoReply customerInfoReply = mUserService.login(authenticationRequest.getUsername(),authenticationRequest.getPassword());
+        LOGGER.info("customerInfoReply info==>" + customerInfoReply.toString());
+        return CommonResp.success(customerInfoReply);
     }
 }

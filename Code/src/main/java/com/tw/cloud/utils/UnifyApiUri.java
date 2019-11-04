@@ -10,7 +10,7 @@ public class UnifyApiUri {
 
     public static class UserApi {
         public static final String API_CUSTOMER_BASE = "/user";
-        public static final String API_CUSTOMER_INFO = "/getCustomerInfo";
+        public static final String API_CUSTOMER_INFO = API_CUSTOMER_BASE + "/getCustomerInfo";
 
 
 

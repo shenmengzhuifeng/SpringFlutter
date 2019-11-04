@@ -1,10 +1,15 @@
 package com.tw.cloud.service.impl;
 
+import com.tw.cloud.bean.user.JwtUserDetail;
+import com.tw.cloud.bean.user.User;
+import com.tw.cloud.mapper.UserMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * 用户服务类
@@ -14,8 +19,16 @@ import org.springframework.stereotype.Service;
  **/
 @Service
 public class UserDetailServiceImpl implements UserDetailsService {
+
+    @Autowired
+    private UserMapper mUserMapper;
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return null;
+        User user = mUserMapper.selectUserByLoginName(username);
+        if (user != null) {
+            return new JwtUserDetail(user);
+        }
+        throw new UsernameNotFoundException("用户名或密码错误");
     }
 }

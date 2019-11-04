@@ -25,12 +25,13 @@ import java.util.Map;
 @Component
 public class JwtTokenUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenUtil.class);
-    private static final String CLAIM_KEY_USERNAME = "sub";
     private static final String CLAIM_KEY_CREATED = "created";
     @Value("${jwt.secret}")
     private String secret;
     @Value("${jwt.expiration}")
     private Long expiration;
+    @Value("${jwt.expirationRefreshToken}")
+    private Long expirationRefreshToken;
 
     /**
      * 根据负责生成JWT的token
@@ -39,6 +40,17 @@ public class JwtTokenUtil {
         return Jwts.builder()
                 .setClaims(claims)
                 .setExpiration(generateExpirationDate())
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
+
+    /**
+     * 根据负责生成JWT的refreshToken
+     */
+    private String generateRefreshToken(Map<String, Object> claims) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateRefreshTokenExpirationDate())
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();
     }
@@ -64,6 +76,12 @@ public class JwtTokenUtil {
      */
     private Date generateExpirationDate() {
         return new Date(System.currentTimeMillis() + expiration * 1000);
+    }
+    /**
+     * 生成refreshToken的过期时间
+     */
+    private Date generateRefreshTokenExpirationDate() {
+        return new Date(System.currentTimeMillis() + expirationRefreshToken * 1000);
     }
 
     /**
@@ -112,9 +130,18 @@ public class JwtTokenUtil {
      */
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put(CLAIM_KEY_USERNAME, userDetails.getUsername());
+        claims.put(Claims.SUBJECT, userDetails.getUsername());
         claims.put(CLAIM_KEY_CREATED, new Date());
         return generateToken(claims);
+    }
+    /**
+     * 根据用户信息生成token
+     */
+    public String generateRefreshToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(Claims.SUBJECT, userDetails.getUsername());
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        return generateRefreshToken(claims);
     }
 
     /**

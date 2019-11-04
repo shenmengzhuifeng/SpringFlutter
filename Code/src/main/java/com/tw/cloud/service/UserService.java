@@ -1,5 +1,7 @@
 package com.tw.cloud.service;
 
+import com.tw.cloud.bean.user.CustomerInfoReply;
+
 /**
  * 用户相关操作
  *
@@ -10,7 +12,7 @@ public interface UserService {
 
     String register();
 
-    String login(String username, String password);
+    CustomerInfoReply login(String username, String password);
 
     //刷新token
     String refresh(String refreshToken);

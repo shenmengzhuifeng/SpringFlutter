@@ -27,12 +27,12 @@ public class JwtUserDetail implements UserDetails {
 
     @Override
     public String getPassword() {
-        return mUser.password;
+        return mUser.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return mUser.loginName;
+        return mUser.getLoginName();
     }
 
     @Override

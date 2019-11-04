@@ -1,5 +1,7 @@
 package com.tw.cloud.component;
 
+import cn.hutool.json.JSONUtil;
+import com.tw.cloud.bean.CommonResp;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
@@ -21,7 +23,7 @@ public class RestfulAccessDeniedHandler implements AccessDeniedHandler {
                        AccessDeniedException e) throws IOException, ServletException {
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");
-//        response.getWriter().println(JSONUtil.parse(CommonResult.forbidden(e.getMessage())));
+        response.getWriter().println(JSONUtil.parse(CommonResp.forbidden(e.getMessage())));
         response.getWriter().flush();
     }
 }

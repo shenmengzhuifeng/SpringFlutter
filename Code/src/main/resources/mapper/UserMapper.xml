@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tw.cloud.mapper.UserMapper">
+
+    <select id="selectUserByLoginName" parameterType="java.lang.String" resultType="com.tw.cloud.bean.user.User">
+        SELECT * FROM user WHERE loginName = #{loginName}
+    </select>
+</mapper>
