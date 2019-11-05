@@ -42,6 +42,10 @@ JWT工作流程
 
 
 
+JWT总共由三部分组成，每部分之间通过圆点（.）连接，这三部分分别是Header、Payload、Signature。先来看一个例子：<br>
+```java
+eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWkiLCJjcmVhdGVkIjoxNTcyOTYxNzA3NTk4LCJleHAiOjE1NzQ3NzYxMDd9.Ifpyzix1y4GoNWyQ54zyZa18HHutO-sAF-fhPC-jZjKoLd-Nr0WcGqMTuk6BNR062Fj6lihXNszCdGpk82rktw
+```
 
 
 
