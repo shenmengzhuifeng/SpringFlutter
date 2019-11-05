@@ -25,17 +25,17 @@ JSON Web Token（JWT）
 先附上官方解释：JSON Web Token（JWT）是一个开放标准（RFC 7519），它定义了一种紧凑且独立的方式，可以在各方之间作为JSON对象安全地传输信息。此信息可以通过数字签名进行验证和信任。JWT可以使用秘密（使用HMAC算法）或使用RSA或ECDSA的公钥/私钥对进行签名。
 虽然JWT可以加密以在各方之间提供保密，但只将专注于签名令牌。签名令牌可以验证其中包含的声明的完整性，而加密令牌则隐藏其他方的声明。当使用公钥/私钥对签署令牌时，签名还证明只有持有私钥的一方是签署私钥的一方。
 
-简单来讲就是JWT可以携带一些用户信息，并且可以进行加密传输。既能反解出用户信息进行识别，又能保证信息的安全可靠。
+简单来讲就是JWT可以携带一些用户信息，并且可以进行加密传输。既能反解出用户信息进行识别，又能保证信息的安全可靠。<br>
 
 JWT工作流程
 ---------
-1、用户通过手机app登录注册界面输入用户名、密码或手机号、验证码进行登录（调用后台登录注册接口）
-2、服务器验证登录鉴权，如果用户信息合法，根据用户的信息和服务器的规则生成JWT token及JWT refreshToken
-3、服务器将token、refreshToken（包括各自的有效期等）以json形式返回。
-4、用户得到token及refreshToken等信息，保存于本地及缓存（如SharedPreferences等）
-5、以后用户请求protected中的API时，在请求的header中加入 Authorization: Bearer xxxx(token)。此处注意token之前有一个7字符长度的 Bearer，当然也可以不用加
-6、当token快过期时，通过refreshToken调用服务端接口刷新token，生成新的有效期token，以续期用户登录状态
-7、服务器端受保护接口对token进行检验，如果合法就解析其中内容，根据其拥有的权限和自己的业务逻辑给出对应的响应结果。
+1、用户通过手机app登录注册界面输入用户名、密码或手机号、验证码进行登录（调用后台登录注册接口）<br>
+2、服务器验证登录鉴权，如果用户信息合法，根据用户的信息和服务器的规则生成JWT token及JWT refreshToken<br>
+3、服务器将token、refreshToken（包括各自的有效期等）以json形式返回。<br>
+4、用户得到token及refreshToken等信息，保存于本地及缓存（如SharedPreferences等）<br>
+5、以后用户请求protected中的API时，在请求的header中加入 Authorization: Bearer xxxx(token)。此处注意token之前有一个7字符长度的 Bearer，当然也可以不用加<br>
+6、当token快过期时，通过refreshToken调用服务端接口刷新token，生成新的有效期token，以续期用户登录状态<br>
+7、服务器端受保护接口对token进行检验，如果合法就解析其中内容，根据其拥有的权限和自己的业务逻辑给出对应的响应结果。<br>
 
 流程图如下：
 
