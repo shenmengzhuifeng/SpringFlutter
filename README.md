@@ -46,6 +46,112 @@ JWT总共由三部分组成，每部分之间通过圆点（.）连接，这三�
 ```java
 eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ3ZWkiLCJjcmVhdGVkIjoxNTcyOTYxNzA3NTk4LCJleHAiOjE1NzQ3NzYxMDd9.Ifpyzix1y4GoNWyQ54zyZa18HHutO-sAF-fhPC-jZjKoLd-Nr0WcGqMTuk6BNR062Fj6lihXNszCdGpk82rktw
 ```
+这个例子总共三部分，分别是:<br>
+eyJhbGciOiJIUzUxMiJ9 <br>
+eyJzdWIiOiJ3ZWkiLCJjcmVhdGVkIjoxNTcyOTYxNzA3NTk4LCJleHAiOjE1NzQ3NzYxMDd9<br>
+Ifpyzix1y4GoNWyQ54zyZa18HHutO-sAF-fhPC-jZjKoLd-Nr0WcGqMTuk6BNR062Fj6lihXNszCdGpk82rktw<br>
+三部分每一部分都分别是通过[BASE64](https://en.wikipedia.org/wiki/Base64)编码而成。我们通过Base64解码器（可直接百度在线解析）进行解析分别得到以下三部分:<br>
+```java
+{"alg":"HS512"}
+```
+```java
+{"sub":"wei","created":1572961707598,"exp":1574776107}
+```
+```java
+!úrÎ,uË¨5lçòe­|{­:À~ÂÊ ·M¯E£ºN5:ØXú(W6ÌÂtjdójä·
+```
+第一部分告诉我们HMAC采用HS512算法对JWT进行的签名。第二部分可以看出是我们自己需要传递的信息内容。前两部分可以看出全部都是明文，所以不能放置敏感和隐私信息。第三部分是整个jwt的保障，没有秘钥无法解析其内容。三部分内容的具体实现在后面代码部分说明。
+
+JWT的生成和解析
+-------------
+这里我们引入[JJWT](https://github.com/jwtk/jjwt)这个开源库，用于JWT的生成。JWT的生成可以使用下面这样的代码完成：<br>
+```java
+
+    /**
+     * 根据用户信息生成token
+     */
+    public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(Claims.SUBJECT, userDetails.getUsername());
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        return generateToken(claims);
+    }
+    
+    /**
+     * 根据负责生成JWT的token
+     */
+    private String generateToken(Map<String, Object> claims) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateExpirationDate())
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
+
+    /**
+     * 根据负责生成JWT的refreshToken
+     */
+    private String generateRefreshToken(Map<String, Object> claims) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateRefreshTokenExpirationDate())
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
+```
+这里方法中的claims参数就是我们要携带在jwt中第二部分的信息，setExpiration设置token过期时间。这里其实两种方式设置都可以，通过把过期时间放到claims里面也可以。我们通过JJWT源码可以很容易理解，Claims类中声明了如下静态变量可供直接使用，
+```java
+    /** JWT {@code Issuer} claims parameter name: <code>"iss"</code> */
+    public static final String ISSUER = "iss";
+
+    /** JWT {@code Subject} claims parameter name: <code>"sub"</code> */
+    public static final String SUBJECT = "sub";
+
+    /** JWT {@code Audience} claims parameter name: <code>"aud"</code> */
+    public static final String AUDIENCE = "aud";
+
+    /** JWT {@code Expiration} claims parameter name: <code>"exp"</code> */
+    public static final String EXPIRATION = "exp";
+
+    /** JWT {@code Not Before} claims parameter name: <code>"nbf"</code> */
+    public static final String NOT_BEFORE = "nbf";
+
+    /** JWT {@code Issued At} claims parameter name: <code>"iat"</code> */
+    public static final String ISSUED_AT = "iat";
+
+    /** JWT {@code JWT ID} claims parameter name: <code>"jti"</code> */
+    public static final String ID = "jti";
+```
+这些属性既能通过对应方法设置也可以直接通过map设置到claims中。其中signWith方法传入我们自己的秘钥。<br>
+解析也很简单，利用 jjwt 提供的parser传入秘钥，然后就可以解析token了。
+
+```java
+    /**
+     * 从token中获取JWT中的负载
+     */
+    private Claims getClaimsFromToken(String token) {
+        Claims claims = null;
+        try {
+            claims = Jwts.parser()
+                    .setSigningKey(secret)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            LOGGER.info("JWT格式验证失败:{}",token);
+        }
+        return claims;
+    }
+```
+
+JWT本身的生成与解析比较简单，重点在于集成到Spring boot中，串联整个权限校验。这里我们通过Spring的一个子项目Spring Security与JJWT结合使用完成本系统的鉴权工作。<br>
+
+Spring Security
+---------------
+
+
+
+
+
 
 
 
