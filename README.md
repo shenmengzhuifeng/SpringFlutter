@@ -147,7 +147,13 @@ JWT本身的生成与解析比较简单，重点在于集成到Spring boot中，
 
 Spring Security
 ---------------
+[Spring Security](http://projects.spring.io/spring-security/)是一个基于Spring的通用安全框架,采用了责任链设计模式，它有一条很长的过滤器链。做过Android开发的应该都用过网络请求框架OKHttp，这里的过滤器链就类似OKHttp的各个网络拦截器。这里关于Spring Security的工作原理不在详细介绍（后面有时间或许可以再做下源码解析）。<br>
 
+代码具体实现
+----------
+功能采用MySql数据库，先创建数据库springflutter，并在数据库springflutter中创建user表。表结构如下：<br>
+
+![](https://github.com/shenmengzhuifeng/SpringFlutter/raw/master/images/user_table.png)
 
 
 
