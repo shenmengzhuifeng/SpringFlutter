@@ -155,6 +155,28 @@ Spring Security
 
 ![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/user_table.jpg)
 
+为了方便用户名密码认证，在user表中直接插入了一条数据，后面实现了注册接口之后可先通过注册接口生成用户信息再调用登录接口登录。为了方便，插入数据的密码暂时以明文方式展现，后面将统一密码加密处理。<br>
+1、首先创建Spring boot项目SpringFlutter，采用Gradle编译方式，其中最简单的一种是通过一个叫Spring Initializr的在线工具 http://start.spring.io/ 进行工程的生成。也可以通过Intellij IED直接创建。创建成功之后在IDE中打开，并创建module，命名为Code。当然这里你也可以不创建submodule，为了后期代码的目录维护，我这里创建了module目录Code。修改settings.gradle文件如下：<br>
+```java
+include 'Code'
+```
+在code目录下的build.gradle下加入如下依赖<br>
+```java
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile('org.springframework.boot:spring-boot-starter-web') //起步依赖
+    compile('org.springframework.boot:spring-boot-starter-jdbc')//起步依赖
+    compile('com.alibaba:druid-spring-boot-starter:1.1.10')//druid数据源
+    compile("org.springframework.boot:spring-boot-starter-security")//Spring Security起步依赖
+    compile("org.springframework.security.oauth:spring-security-oauth2")//Spring Security oauth2
+    compile("org.springframework.security:spring-security-jwt")
+    compile("mysql:mysql-connector-java")
+    compile('io.jsonwebtoken:jjwt:0.9.0')//jjwt库
+    compile('org.mybatis.spring.boot:mybatis-spring-boot-starter:1.3.1')//mybatis起步依赖
+    compile('mysql:mysql-connector-java:8.0.11')
+    compile('cn.hutool:hutool-all:4.5.7')//方法工具库
+}
+```
 
 
 
