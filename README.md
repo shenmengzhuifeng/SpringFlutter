@@ -153,7 +153,7 @@ Spring Security
 ----------
 功能采用MySql数据库，先创建数据库springflutter，并在数据库springflutter中创建user表。表结构如下：<br>
 
-![](https://github.com/shenmengzhuifeng/SpringFlutter/raw/master/images/user_table.png)
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/user_table.jpg)
 
 
 
