@@ -1,5 +1,7 @@
 package com.tw.cloud.bean.user;
 
+import java.util.Date;
+
 /**
  * 用户bean
  *
@@ -7,6 +9,8 @@ package com.tw.cloud.bean.user;
  * @create 2019-10-20 7:47 PM
  **/
 public class User {
+
+    private Long id;
 
     private String loginName;
 
@@ -19,6 +23,10 @@ public class User {
     private String mobilePhone;
 
     private String password;
+
+    private Date createTime;
+
+    private Date loginTime;
 
     public String getLoginName() {
         return loginName;
@@ -66,5 +74,29 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public Date getLoginTime() {
+        return loginTime;
+    }
+
+    public void setLoginTime(Date loginTime) {
+        this.loginTime = loginTime;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

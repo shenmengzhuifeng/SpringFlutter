@@ -14,6 +14,8 @@ public interface UserService {
 
     CustomerInfoReply login(String username, String password);
 
+    CustomerInfoReply register(String username, String password);
+
     //刷新token
     String refresh(String refreshToken);
 }

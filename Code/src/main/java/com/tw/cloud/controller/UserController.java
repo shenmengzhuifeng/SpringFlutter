@@ -71,4 +71,13 @@ public class UserController {
         LOGGER.info("customerInfoReply info==>" + customerInfoReply.toString());
         return CommonResp.success(customerInfoReply);
     }
+
+    @RequestMapping(value = UnifyApiUri.UserApi.API_AUTH_REGISTER,
+            method = RequestMethod.POST,produces= MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public CommonResp<CustomerInfoReply> register(@RequestBody AuthenticationRequest authenticationRequest) {
+        LOGGER.info("login info==>" + authenticationRequest.toString());
+        CustomerInfoReply customerInfoReply = mUserService.register(authenticationRequest.getUsername(),authenticationRequest.getPassword());
+        LOGGER.info("customerInfoReply info==>" + customerInfoReply.toString());
+        return CommonResp.success(customerInfoReply);
+    }
 }
