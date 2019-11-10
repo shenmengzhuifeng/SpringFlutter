@@ -257,7 +257,7 @@ dependencies {
 ```
 <br>
 在application.yml(可在resource文件夹下新建此文件，application.properties文件就不用了，区别可自行百度)文件添加如下内容：
-```java
+```yml
 spring:
   profiles:
     active: dev #默认为开发环境
@@ -278,7 +278,6 @@ spring:
       stat-view-servlet: #访问监控网页的登录用户名和密码
         login-username: druid
         login-password: druid
-
 server:
   port: 8089 #服务运行端口
 
