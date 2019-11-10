@@ -682,7 +682,7 @@ public class CustomerInfoReply {
     private Long refreshTokenExpireTime;
 ```
 整个登录并返回token的具体过程已经结束，拿到返回的token，终端请求相关接口时带上token。<br>
-![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_login.jpg)
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_login.png)
 
 我们发现UserController类中出来login方法还有一个getCustomerInfo方法用于获取用户详细信息，此方法需要校验token，并通过token里面的loginName查询相关用户信息。Spring Security会在请求到达Controller之前先对token的格式、有效期等做校验。这里我们就需要添加token校验的过滤器，用于校验token，过滤器类实现如下：<br>
 ```java
@@ -725,7 +725,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
    // 添加JWT filter
         httpSecurity.addFilterBefore(jwtAuthenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 ```
-![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_getCustomerInfo.jpg)
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_getCustomerInfo.png)
 
 前面对于WebSecurityConfig已经展示，这里不再赘述，这样就实现了token的整个认证流程。
 
