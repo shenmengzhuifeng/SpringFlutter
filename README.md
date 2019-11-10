@@ -147,22 +147,591 @@ JWT本身的生成与解析比较简单，重点在于集成到Spring boot中，
 
 Spring Security
 ---------------
-[Spring Security](http://projects.spring.io/spring-security/)是一个基于Spring的通用安全框架,采用了责任链设计模式，它有一条很长的过滤器链。做过Android开发的应该都用过网络请求框架OKHttp，这里的过滤器链就类似OKHttp的各个网络拦截器。这里关于Spring Security的工作原理不在详细介绍（后面有时间或许可以再做下源码解析）。<br>
+[Spring Security](http://projects.spring.io/spring-security/)是一个基于Spring的通用安全框架,采用了责任链设计模式，它有一条很长的过滤器链。做过Android开发的应该都用过网络请求框架OKHttp，这里的过滤器链就类似OKHttp的各个网络拦截器。拦截器相关的所有配置均位于WebSecurityConfigurerAdapter类中，可实现如下：<br>
+```java
+@Configuration
+@EnableWebSecurity
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    // Spring会自动寻找同样类型的具体类注入，这里就是JwtUserDetailsServiceImpl了
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Autowired
+    private RestfulAccessDeniedHandler restfulAccessDeniedHandler;
+    @Autowired
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
+    @Autowired
+    public void configureAuthentication(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+        authenticationManagerBuilder
+                // 设置UserDetailsService
+                .userDetailsService(this.userDetailsService)
+                // 使用BCrypt进行密码的hash
+                .passwordEncoder(passwordEncoder());
+    }
+    // 装载BCrypt密码编码器
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public JwtAuthenticationTokenFilter jwtAuthenticationTokenFilter(){
+        return new JwtAuthenticationTokenFilter();
+    }
+
+    @Override
+    protected void configure(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity
+                // 由于使用的是JWT，我们这里不需要csrf
+                .csrf().disable()
+
+                // 基于token，所以不需要session
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+
+                .authorizeRequests()
+                //.antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // 允许对于网站静态资源的无授权访问
+                .antMatchers(
+                        HttpMethod.GET,
+                        "/",
+                        "/*.html",
+                        "/favicon.ico",
+                        "/**/*.html",
+                        "/**/*.css",
+                        "/**/*.js"
+                ).permitAll()
+                // 对于获取token的rest api要允许匿名访问
+                .antMatchers("/auth/**").permitAll()
+                // 除上面外的所有请求全部需要鉴权认证
+                .anyRequest().authenticated();
+
+        // 禁用缓存
+        httpSecurity.headers().cacheControl();
+        // 添加JWT filter
+        httpSecurity.addFilterBefore(jwtAuthenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        //添加自定义未授权和未登录结果返回
+        httpSecurity.exceptionHandling()
+                .accessDeniedHandler(restfulAccessDeniedHandler)
+                .authenticationEntryPoint(restAuthenticationEntryPoint);
+    }
+}
+```
+配置简介
+------
+configureAuthentication(AuthenticationManagerBuilder authenticationManagerBuilder)
+
+AuthenticationManager 的建造器，配置 AuthenticationManagerBuilder 会让Security 自动构建一个 AuthenticationManager；如果想要使用该功能你需要配置一个 UserDetailService 和 PasswordEncoder。UserDetailsService 用于在认证器中根据用户传过来的用户名查找一个用户， PasswordEncoder 用于密码的加密与比对，我们存储用户密码的时候用PasswordEncoder.encode() 加密存储，在认证器里会调用 PasswordEncoder.matches() 方法进行密码比对。如果重写了该方法，Security 会启用 DaoAuthenticationProvider 这个认证器，该认证就是先调用 UserDetailsService.loadUserByUsername 然后使用 PasswordEncoder.matches() 进行密码比对，如果认证成功成功则返回一个 Authentication 对象。
+
+configure(HttpSecurity httpSecurity) 
+
+这个配置方法是整个Spring Security的关键，也是最复杂。本项目中用到的已在上面代码中进行注释，这里唯一要说明的是addFilterBefore方法，指插入对应的过滤器之前，还有addFilterAfter 加在对应的过滤器之后，addFilterAt 加在过滤器同一位置。
 
 代码具体实现
 ----------
 功能采用MySql数据库，先创建数据库springflutter，并在数据库springflutter中创建user表。表结构如下：<br>
 
-![](https://github.com/shenmengzhuifeng/SpringFlutter/raw/master/images/user_table.png)
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/user_table.jpg)
+
+为了方便用户名密码认证，在user表中直接插入了一条数据，后面实现了注册接口之后可先通过注册接口生成用户信息再调用登录接口登录。为了方便，插入数据的密码暂时以明文方式展现，后面将统一密码加密处理。<br>
+1、首先创建Spring boot项目SpringFlutter，采用Gradle编译方式，其中最简单的一种是通过一个叫Spring Initializr的在线工具 http://start.spring.io/ 进行工程的生成。也可以通过Intellij IED直接创建。创建成功之后在IDE中打开，并创建module，命名为Code。当然这里你也可以不创建submodule，为了后期代码的目录维护，我这里创建了module目录Code。修改settings.gradle文件如下：<br>
+```java
+include 'Code'
+```
+在code目录下的build.gradle下加入如下依赖<br>
+```java
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile('org.springframework.boot:spring-boot-starter-web') //起步依赖
+    compile('org.springframework.boot:spring-boot-starter-jdbc')//起步依赖
+    compile('com.alibaba:druid-spring-boot-starter:1.1.10')//druid数据源
+    compile("org.springframework.boot:spring-boot-starter-security")//Spring Security起步依赖
+    compile("org.springframework.security.oauth:spring-security-oauth2")//Spring Security oauth2
+    compile("org.springframework.security:spring-security-jwt")
+    compile("mysql:mysql-connector-java")
+    compile('io.jsonwebtoken:jjwt:0.9.0')//jjwt库
+    compile('org.mybatis.spring.boot:mybatis-spring-boot-starter:1.3.1')//mybatis起步依赖
+    compile('mysql:mysql-connector-java:8.0.11')
+    compile('cn.hutool:hutool-all:4.5.7')//方法工具库
+}
+```
+<br>
+在application.yml(可在resource文件夹下新建此文件，application.properties文件就不用了，区别可自行百度)文件添加如下内容：
+```java
+spring:
+  profiles:
+    active: dev #默认为开发环境
+  datasource:
+    #mysql数据库
+    url: jdbc:mysql://localhost:3306/springflutter
+    #数据库用户名
+    username: root
+    #密码
+    password: 123456
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initial-size: 5 #连接池初始化大小
+      min-idle: 10 #最小空闲连接数
+      max-active: 20 #最大连接数
+      web-stat-filter:
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*" #不统计这些请求数据
+      stat-view-servlet: #访问监控网页的登录用户名和密码
+        login-username: druid
+        login-password: druid
+
+server:
+  port: 8089 #服务运行端口
+
+mybatis:
+  mapper-locations:
+  - classpath:mapper/*.xml #mybatis 对应的mapper路径
+
+jwt:
+  tokenHeader: Authorization #JWT存储的请求头
+  secret: mySecret #JWT加解密使用的密钥
+  expiration: 1814400 #JWT的超期限时间(60*60*24*3)
+  expirationRefreshToken: 54432000 #JWT的超期限时间(60*60*24*90)
+  tokenHead: Bearer  #JWT负载中拿到开头
+
+logging:
+  level:
+    root: info #日志配置DEBUG,INFO,WARN,ERROR
+#  file: demo_log.log #配置日志生成路径
+#  path: /var/logs #配置日志文件名称
+
+```
+
+一切配置就绪（数据库用户名密码修改为自己的），准备写代码了，首先创建用户表的映射类User<br>
+```java
+public class User {
+
+    private String loginName;
+
+    private String nickName;
+
+    private String customerId;
+
+    private String headerUrl;
+
+    private String mobilePhone;
+
+    private String password;
+```
+省略set、get方法，然后创建用户表操作对应的Mapper类与xml文件，UserMapper、UserMapper.xml<br>
+```java
+@Mapper
+public interface UserMapper {
+    User selectUserByLoginName(@Param("loginName") String loginName);
+}
+```
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tw.cloud.mapper.UserMapper">
+
+    <select id="selectUserByLoginName" parameterType="java.lang.String" resultType="com.tw.cloud.bean.user.User">
+        SELECT * FROM user WHERE loginName = #{loginName}
+    </select>
+</mapper>
+```
+创建Spring Security中的UserDetailsService实现类<br>
+```java
+@Service
+public class UserDetailServiceImpl implements UserDetailsService {
+
+    @Autowired
+    private UserMapper mUserMapper;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = mUserMapper.selectUserByLoginName(username);
+        if (user != null) {
+            return new JwtUserDetail(user);
+        }
+        throw new UsernameNotFoundException("用户名或密码错误");
+    }
+}
+```
+创建Spring Security中UserDetails的实现类<br>
+```java
+public class JwtUserDetail implements UserDetails {
+
+    private User mUser;
 
 
+    public JwtUserDetail(User user){
+        this.mUser = user;
+    }
 
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return null;
+    }
 
+    @Override
+    public String getPassword() {
+        return mUser.getPassword();
+    }
 
+    @Override
+    public String getUsername() {
+        return mUser.getLoginName();
+    }
 
+    @Override
+    public boolean isAccountNonExpired() {
+        return false;//暂未实现
+    }
 
+    @Override
+    public boolean isAccountNonLocked() {
+        return false;//暂未实现
+    }
 
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return false;//暂未实现
+    }
 
+    @Override
+    public boolean isEnabled() {
+        return false;//暂未实现
+    }
+```
+创建UserService，作为用户相关操作类，与UserDetailService不同，这个实现类会包括所有用户相关操作<br>
+```java
+@Service
+public class UserServiceImpl implements UserService {
+
+    @Autowired
+    private UserDetailsService mUserDetailsService;
+
+    @Autowired
+    private PasswordEncoder mPasswordEncoder;
+
+    @Autowired
+    private JwtTokenUtil mJwtTokenUtil;
+
+    @Value("${jwt.expiration}")
+    private Long mExpiration;
+    @Value("${jwt.expirationRefreshToken}")
+    private Long mExpirationRefreshToken;
+
+    @Override
+    public String register() {
+        return null;
+    }
+
+    @Override
+    public CustomerInfoReply login(String username, String password) {
+        UserDetails userDetails = mUserDetailsService.loadUserByUsername(username);
+//        if(!mPasswordEncoder.matches(password,userDetails.getPassword())){
+//            throw new BadCredentialsException("密码不正确");
+//        } //这里暂时不对密码进行加密校验
+        if(!password.equals(userDetails.getPassword())){
+            throw new BadCredentialsException("密码不正确");
+        }
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = mJwtTokenUtil.generateToken(userDetails);
+        String refreshToken = mJwtTokenUtil.generateRefreshToken(userDetails);
+        return new CustomerInfoReply(token,refreshToken,mExpiration,mExpirationRefreshToken);
+    }
+```
+这里的login方法通过从数据库里面查到的用户名生成jwt token refreshToken，JwtTokenUtil类的具体实现如下。<br>
+/**
+ * JwtToken生成的工具类
+ * JWT token的格式：header.payload.signature
+ * header的格式（算法、token的类型）：
+ * {"alg": "HS512","typ": "JWT"}
+ * payload的格式（用户名、创建时间、生成时间）：
+ * {"sub":"wang","created":1489079981393,"exp":1489684781}
+ * signature的生成算法：
+ * HMACSHA512(base64UrlEncode(header) + "." +base64UrlEncode(payload),secret)
+ * Created by wei
+ */
+@Component
+public class JwtTokenUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenUtil.class);
+    private static final String CLAIM_KEY_CREATED = "created";
+    @Value("${jwt.secret}")
+    private String secret;
+    @Value("${jwt.expiration}")
+    private Long expiration;
+    @Value("${jwt.expirationRefreshToken}")
+    private Long expirationRefreshToken;
+
+    /**
+     * 根据负责生成JWT的token
+     */
+    private String generateToken(Map<String, Object> claims) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateExpirationDate())
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
+
+    /**
+     * 根据负责生成JWT的refreshToken
+     */
+    private String generateRefreshToken(Map<String, Object> claims) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateRefreshTokenExpirationDate())
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
+
+    /**
+     * 从token中获取JWT中的负载
+     */
+    private Claims getClaimsFromToken(String token) {
+        Claims claims = null;
+        try {
+            claims = Jwts.parser()
+                    .setSigningKey(secret)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            LOGGER.info("JWT格式验证失败:{}",token);
+        }
+        return claims;
+    }
+
+    /**
+     * 生成token的过期时间
+     */
+    private Date generateExpirationDate() {
+        return new Date(System.currentTimeMillis() + expiration * 1000);
+    }
+    /**
+     * 生成refreshToken的过期时间
+     */
+    private Date generateRefreshTokenExpirationDate() {
+        return new Date(System.currentTimeMillis() + expirationRefreshToken * 1000);
+    }
+
+    /**
+     * 从token中获取登录用户名
+     */
+    public String getUserNameFromToken(String token) {
+        String username;
+        try {
+            Claims claims = getClaimsFromToken(token);
+            username =  claims.getSubject();
+        } catch (Exception e) {
+            username = null;
+        }
+        return username;
+    }
+
+    /**
+     * 验证token是否还有效
+     *
+     * @param token       客户端传入的token
+     * @param userDetails 从数据库中查询出来的用户信息
+     */
+    public boolean validateToken(String token, UserDetails userDetails) {
+        String username = getUserNameFromToken(token);
+        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
+
+    /**
+     * 判断token是否已经失效
+     */
+    private boolean isTokenExpired(String token) {
+        Date expiredDate = getExpiredDateFromToken(token);
+        return expiredDate.before(new Date());
+    }
+
+    /**
+     * 从token中获取过期时间
+     */
+    private Date getExpiredDateFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.getExpiration();
+    }
+
+    /**
+     * 根据用户信息生成token
+     */
+    public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(Claims.SUBJECT, userDetails.getUsername());
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        return generateToken(claims);
+    }
+    /**
+     * 根据用户信息生成token
+     */
+    public String generateRefreshToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(Claims.SUBJECT, userDetails.getUsername());
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        return generateRefreshToken(claims);
+    }
+
+    /**
+     * 判断token是否可以被刷新
+     */
+    public boolean canRefresh(String token) {
+        return !isTokenExpired(token);
+    }
+
+    /**
+     * 刷新token
+     */
+    public String refreshToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        return generateToken(claims);
+    }
+}
+
+接下来创建UserController类，添加登录接口映射方法login：<br>
+```java
+@RestController
+public class UserController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
+
+    @Autowired
+    private UserService mUserService;
+
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+
+    @Value("${jwt.tokenHeader}")
+    private String tokenHeader;
+    @Value("${jwt.tokenHead}")
+    private String tokenHead;
+
+    @RequestMapping(value = UnifyApiUri.UserApi.API_CUSTOMER_INFO,method = RequestMethod.GET)
+    public CommonResp<User> getCustomerInfo(HttpServletRequest request) {
+        String authHeader = request.getHeader(this.tokenHeader);
+        if (authHeader != null && authHeader.startsWith(this.tokenHead)) {
+            String authToken = authHeader.substring(this.tokenHead.length());// The part after "Bearer "
+            String username = jwtTokenUtil.getUserNameFromToken(authToken);
+            User user = userMapper.selectUserByLoginName(username);
+            return CommonResp.success(user);
+        }else {
+            return new CommonResp<User>(Constants.RESULT_ERROR,ResultCode.RESULT_CODE_1002.getCode()
+            ,ResultCode.RESULT_CODE_1002.getMessage(),null);
+        }
+    }
+
+    @RequestMapping(value = UnifyApiUri.UserApi.API_AUTH_LOGIN,
+            method = RequestMethod.POST,produces= MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public CommonResp<CustomerInfoReply> login(@RequestBody AuthenticationRequest authenticationRequest) {
+        LOGGER.info("login info==>" + authenticationRequest.toString());
+        CustomerInfoReply customerInfoReply = mUserService.login(authenticationRequest.getUsername(),authenticationRequest.getPassword());
+        LOGGER.info("customerInfoReply info==>" + customerInfoReply.toString());
+        return CommonResp.success(customerInfoReply);
+    }
+}
+```
+
+login方法解析<br>
+-----------
+方法请求方式为post，请求参数设置类型为RequestBody，安卓端采用okhttp的postString方法进行请求。首先从请求参数中获取用户名密码，其中请求body体类如下：
+
+```java
+public class AuthenticationRequest extends CommonRequest{
+    @NotEmpty(message = "用户名不能为空")
+    private String username;
+    @NotEmpty(message = "密码不能为空")
+    private String password;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "AuthenticationRequest{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                '}';
+    }
+}
+```
+获取到请求的用户名和密码之后调用UserService类的login方法进行登录，登录成功返回CustomerInfoReply<br>
+```java
+public class CustomerInfoReply {
+
+    private String token;
+
+    private String refreshToken;
+
+    private Long tokenExpireTime;
+
+    private Long refreshTokenExpireTime;
+```
+整个登录并返回token的具体过程已经结束，拿到返回的token，终端请求相关接口时带上token。<br>
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_login.jpg)
+
+我们发现UserController类中出来login方法还有一个getCustomerInfo方法用于获取用户详细信息，此方法需要校验token，并通过token里面的loginName查询相关用户信息。Spring Security会在请求到达Controller之前先对token的格式、有效期等做校验。这里我们就需要添加token校验的过滤器，用于校验token，过滤器类实现如下：<br>
+```java
+public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationTokenFilter.class);
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+    @Value("${jwt.tokenHeader}")
+    private String tokenHeader;
+    @Value("${jwt.tokenHead}")
+    private String tokenHead;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        String authHeader = request.getHeader(this.tokenHeader);
+        if (authHeader != null && authHeader.startsWith(this.tokenHead)) {
+            String authToken = authHeader.substring(this.tokenHead.length());// The part after "Bearer "
+            String username = jwtTokenUtil.getUserNameFromToken(authToken);
+            LOGGER.info("checking username:{}", username);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                if (jwtTokenUtil.validateToken(authToken, userDetails)) {
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    LOGGER.info("authenticated user:{}", username);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            }
+        }
+        chain.doFilter(request, response);
+    }
+}
+```
+创建JwtAuthenticationTokenFilter之后，为了使其生效，需要将其加入到Spring Security过滤器链中，实现如下：<br>
+```java
+   // 添加JWT filter
+        httpSecurity.addFilterBefore(jwtAuthenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+```
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_getCustomerInfo.jpg)
+
+前面对于WebSecurityConfig已经展示，这里不再赘述，这样就实现了token的整个认证流程。
+
+第二章 MyBatis Generator代码生成器
+-------------------------------
 
 
 
