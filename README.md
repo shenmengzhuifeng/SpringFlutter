@@ -255,9 +255,8 @@ dependencies {
     compile('cn.hutool:hutool-all:4.5.7')//方法工具库
 }
 ```
-<br>
-在application.yml(可在resource文件夹下新建此文件，application.properties文件就不用了，区别可自行百度)文件添加如下内容：
-```yml
+在application.yml(可在resource文件夹下新建此文件，application.properties文件就不用了，区别可自行百度)文件添加如下内容：<br>
+```java
 spring:
   profiles:
     active: dev #默认为开发环境
@@ -299,7 +298,6 @@ logging:
 #  path: /var/logs #配置日志文件名称
 
 ```
-
 一切配置就绪（数据库用户名密码修改为自己的），准备写代码了，首先创建用户表的映射类User<br>
 ```java
 public class User {
