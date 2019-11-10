@@ -255,8 +255,7 @@ dependencies {
     compile('cn.hutool:hutool-all:4.5.7')//方法工具库
 }
 ```
-<br>
-在application.yml(可在resource文件夹下新建此文件，application.properties文件就不用了，区别可自行百度)文件添加如下内容：
+在application.yml(可在resource文件夹下新建此文件，application.properties文件就不用了，区别可自行百度)文件添加如下内容：<br>
 ```java
 spring:
   profiles:
@@ -278,7 +277,6 @@ spring:
       stat-view-servlet: #访问监控网页的登录用户名和密码
         login-username: druid
         login-password: druid
-
 server:
   port: 8089 #服务运行端口
 
@@ -300,7 +298,6 @@ logging:
 #  path: /var/logs #配置日志文件名称
 
 ```
-
 一切配置就绪（数据库用户名密码修改为自己的），准备写代码了，首先创建用户表的映射类User<br>
 ```java
 public class User {
@@ -439,6 +436,8 @@ public class UserServiceImpl implements UserService {
     }
 ```
 这里的login方法通过从数据库里面查到的用户名生成jwt token refreshToken，JwtTokenUtil类的具体实现如下。<br>
+
+```java
 /**
  * JwtToken生成的工具类
  * JWT token的格式：header.payload.signature
@@ -588,7 +587,7 @@ public class JwtTokenUtil {
         return generateToken(claims);
     }
 }
-
+```
 接下来创建UserController类，添加登录接口映射方法login：<br>
 ```java
 @RestController
@@ -683,7 +682,7 @@ public class CustomerInfoReply {
     private Long refreshTokenExpireTime;
 ```
 整个登录并返回token的具体过程已经结束，拿到返回的token，终端请求相关接口时带上token。<br>
-![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_login.jpg)
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_login.png)
 
 我们发现UserController类中出来login方法还有一个getCustomerInfo方法用于获取用户详细信息，此方法需要校验token，并通过token里面的loginName查询相关用户信息。Spring Security会在请求到达Controller之前先对token的格式、有效期等做校验。这里我们就需要添加token校验的过滤器，用于校验token，过滤器类实现如下：<br>
 ```java
@@ -726,7 +725,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
    // 添加JWT filter
         httpSecurity.addFilterBefore(jwtAuthenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 ```
-![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_getCustomerInfo.jpg)
+![](https://github.com/shenmengzhuifeng/SpringFlutter/blob/master/images/image_getCustomerInfo.png)
 
 前面对于WebSecurityConfig已经展示，这里不再赘述，这样就实现了token的整个认证流程。
 
