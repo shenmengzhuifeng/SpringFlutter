@@ -147,7 +147,85 @@ JWT本身的生成与解析比较简单，重点在于集成到Spring boot中，
 
 Spring Security
 ---------------
-[Spring Security](http://projects.spring.io/spring-security/)是一个基于Spring的通用安全框架,采用了责任链设计模式，它有一条很长的过滤器链。做过Android开发的应该都用过网络请求框架OKHttp，这里的过滤器链就类似OKHttp的各个网络拦截器。这里关于Spring Security的工作原理不在详细介绍（后面有时间或许可以再做下源码解析）。<br>
+[Spring Security](http://projects.spring.io/spring-security/)是一个基于Spring的通用安全框架,采用了责任链设计模式，它有一条很长的过滤器链。做过Android开发的应该都用过网络请求框架OKHttp，这里的过滤器链就类似OKHttp的各个网络拦截器。拦截器相关的所有配置均位于WebSecurityConfigurerAdapter类中，可实现如下：<br>
+```java
+@Configuration
+@EnableWebSecurity
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    // Spring会自动寻找同样类型的具体类注入，这里就是JwtUserDetailsServiceImpl了
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Autowired
+    private RestfulAccessDeniedHandler restfulAccessDeniedHandler;
+    @Autowired
+    private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
+    @Autowired
+    public void configureAuthentication(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+        authenticationManagerBuilder
+                // 设置UserDetailsService
+                .userDetailsService(this.userDetailsService)
+                // 使用BCrypt进行密码的hash
+                .passwordEncoder(passwordEncoder());
+    }
+    // 装载BCrypt密码编码器
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public JwtAuthenticationTokenFilter jwtAuthenticationTokenFilter(){
+        return new JwtAuthenticationTokenFilter();
+    }
+
+    @Override
+    protected void configure(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity
+                // 由于使用的是JWT，我们这里不需要csrf
+                .csrf().disable()
+
+                // 基于token，所以不需要session
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+
+                .authorizeRequests()
+                //.antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // 允许对于网站静态资源的无授权访问
+                .antMatchers(
+                        HttpMethod.GET,
+                        "/",
+                        "/*.html",
+                        "/favicon.ico",
+                        "/**/*.html",
+                        "/**/*.css",
+                        "/**/*.js"
+                ).permitAll()
+                // 对于获取token的rest api要允许匿名访问
+                .antMatchers("/auth/**").permitAll()
+                // 除上面外的所有请求全部需要鉴权认证
+                .anyRequest().authenticated();
+
+        // 禁用缓存
+        httpSecurity.headers().cacheControl();
+        // 添加JWT filter
+        httpSecurity.addFilterBefore(jwtAuthenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        //添加自定义未授权和未登录结果返回
+        httpSecurity.exceptionHandling()
+                .accessDeniedHandler(restfulAccessDeniedHandler)
+                .authenticationEntryPoint(restAuthenticationEntryPoint);
+    }
+}
+```
+配置简介
+------
+configureAuthentication(AuthenticationManagerBuilder authenticationManagerBuilder)
+
+AuthenticationManager 的建造器，配置 AuthenticationManagerBuilder 会让Security 自动构建一个 AuthenticationManager；如果想要使用该功能你需要配置一个 UserDetailService 和 PasswordEncoder。UserDetailsService 用于在认证器中根据用户传过来的用户名查找一个用户， PasswordEncoder 用于密码的加密与比对，我们存储用户密码的时候用PasswordEncoder.encode() 加密存储，在认证器里会调用 PasswordEncoder.matches() 方法进行密码比对。如果重写了该方法，Security 会启用 DaoAuthenticationProvider 这个认证器，该认证就是先调用 UserDetailsService.loadUserByUsername 然后使用 PasswordEncoder.matches() 进行密码比对，如果认证成功成功则返回一个 Authentication 对象。
+
+configure(HttpSecurity httpSecurity) 
+
+这个配置方法是整个Spring Security的关键，也是最复杂。本项目中用到的已在上面代码中进行注释，这里唯一要说明的是addFilterBefore方法，指插入对应的过滤器之前，还有addFilterAfter 加在对应的过滤器之后，addFilterAt 加在过滤器同一位置。
 
 代码具体实现
 ----------
