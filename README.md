@@ -436,6 +436,8 @@ public class UserServiceImpl implements UserService {
     }
 ```
 这里的login方法通过从数据库里面查到的用户名生成jwt token refreshToken，JwtTokenUtil类的具体实现如下。<br>
+
+```java
 /**
  * JwtToken生成的工具类
  * JWT token的格式：header.payload.signature
@@ -585,7 +587,7 @@ public class JwtTokenUtil {
         return generateToken(claims);
     }
 }
-
+```
 接下来创建UserController类，添加登录接口映射方法login：<br>
 ```java
 @RestController
