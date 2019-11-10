@@ -4,7 +4,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * 用户登录参数
- * Created by macro on 2018/4/26.
+ * Created by wei.
  */
 public class AuthenticationRequest extends CommonRequest{
     @NotEmpty(message = "用户名不能为空")
