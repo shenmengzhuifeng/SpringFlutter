@@ -16,6 +16,8 @@ public interface UserService {
 
     CustomerInfoReply register(String username, String password);
 
+    void updateUserHeader(String username,String headUrl);
+
     //刷新token
     String refresh(String refreshToken);
 }

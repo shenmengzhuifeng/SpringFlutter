@@ -81,6 +81,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void updateUserHeader(String username, String headUrl) {
+        mUserMapper.updateUserHeader(username,headUrl);
+    }
+
+    @Override
     public String refresh(String refreshToken) {
         return null;
     }

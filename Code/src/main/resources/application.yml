@@ -29,10 +29,11 @@ mybatis:
 jwt:
   tokenHeader: Authorization #JWT存储的请求头
   secret: mySecret #JWT加解密使用的密钥
-  expiration: 1814400 #JWT的超期限时间(60*60*24*3)
+  expiration: 259200 #JWT的超期限时间(60*60*24*3)
   expirationRefreshToken: 54432000 #JWT的超期限时间(60*60*24*90)
   tokenHead: Bearer  #JWT负载中拿到开头
-
+file:
+  UPLOADED_FOLDER: /my_computer/project/spring_flutter/image/
 logging:
   level:
     root: info #日志配置DEBUG,INFO,WARN,ERROR

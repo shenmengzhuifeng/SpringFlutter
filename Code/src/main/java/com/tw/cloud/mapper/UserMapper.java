@@ -10,5 +10,7 @@ public interface UserMapper {
 
     User selectUserByLoginName(@Param("loginName") String loginName);
 
+    void updateUserHeader(@Param("loginName") String loginName,@Param("headUrl") String headUrl);
+
     int insert(User user);
 }

@@ -15,4 +15,7 @@
          #{nickName,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP}, #{loginTime,jdbcType=TIMESTAMP}
         )
     </insert>
+    <update id="updateUserHeader">
+        update user set headerUrl=#{headUrl} where loginName = #{loginName}
+    </update>
 </mapper>
