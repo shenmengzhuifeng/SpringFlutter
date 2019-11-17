@@ -42,26 +42,13 @@ public class UserController {
     @Autowired
     private UserService mUserService;
 
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-
-    @Value("${jwt.tokenHeader}")
-    private String tokenHeader;
-    @Value("${jwt.tokenHead}")
-    private String tokenHead;
     @Value("${file.UPLOADED_FOLDER}")
     private String UPLOADED_FOLDER;
 
     @RequestMapping(value = UnifyApiUri.UserApi.API_CUSTOMER_INFO, method = RequestMethod.GET)
-    public CommonResp<User> getCustomerInfo(HttpServletRequest request) {
-        String authHeader = request.getHeader(this.tokenHeader);
-        if (authHeader != null && authHeader.startsWith(this.tokenHead)) {
-            String authToken = authHeader.substring(this.tokenHead.length());// The part after "Bearer "
-            String username = jwtTokenUtil.getUserNameFromToken(authToken);
-            User user = userMapper.selectUserByLoginName(username);
+    public CommonResp<User> getCustomerInfo() {
+        User user = mUserService.getCustomerInfo();
+        if (user != null) {
             return CommonResp.success(user);
         } else {
             return new CommonResp<User>(Constants.RESULT_ERROR, ResultCode.RESULT_CODE_1002.getCode()
@@ -89,7 +76,7 @@ public class UserController {
 
     @RequestMapping(value = UnifyApiUri.UserApi.API_UPDATE_CUSTOMER_INFO,
             method = RequestMethod.POST, produces = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String updateCustomerInfo(@RequestParam("file") MultipartFile file,HttpServletRequest request) {
+    public String updateCustomerInfo(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()){
             return JSONUtil.parse(CommonResp.failed("file can not null")).toStringPretty();
         }
@@ -100,7 +87,7 @@ public class UserController {
             String pathString = UPLOADED_FOLDER + tempUrl;
             Path path = Paths.get(pathString);
             Files.write(path, bytes);
-            mUserService.updateUserHeader(jwtTokenUtil.getLoginNameFromHttpServer(request),tempUrl);
+            mUserService.updateUserHeader(tempUrl);
             return JSONUtil.parse(CommonResp.success("result is ok")).toStringPretty();
         } catch (IOException e) {
             e.printStackTrace();

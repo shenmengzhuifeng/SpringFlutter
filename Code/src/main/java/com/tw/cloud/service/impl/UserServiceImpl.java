@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -81,8 +83,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUserHeader(String username, String headUrl) {
-        mUserMapper.updateUserHeader(username,headUrl);
+    public void updateUserHeader(String headUrl) {
+        UserDetails user = getUserDetails();
+
+        mUserMapper.updateUserHeader(user.getUsername(),headUrl);
+    }
+
+    @Override
+    public User getCustomerInfo() {
+        UserDetails user = getUserDetails();
+        return mUserMapper.selectUserByLoginName(user.getUsername());
+    }
+
+    @Override
+    public UserDetails getUserDetails() {
+        SecurityContext ctx = SecurityContextHolder.getContext();
+        Authentication auth = ctx.getAuthentication();
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+        return userDetails;
     }
 
     @Override

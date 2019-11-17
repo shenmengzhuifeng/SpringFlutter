@@ -1,6 +1,8 @@
 package com.tw.cloud.service;
 
 import com.tw.cloud.bean.user.CustomerInfoReply;
+import com.tw.cloud.bean.user.User;
+import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * 用户相关操作
@@ -16,7 +18,11 @@ public interface UserService {
 
     CustomerInfoReply register(String username, String password);
 
-    void updateUserHeader(String username,String headUrl);
+    void updateUserHeader(String headUrl);
+
+    User getCustomerInfo();
+
+    UserDetails getUserDetails();
 
     //刷新token
     String refresh(String refreshToken);
