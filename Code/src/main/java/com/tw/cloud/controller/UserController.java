@@ -44,9 +44,12 @@ public class UserController {
 
     @Value("${file.UPLOADED_FOLDER}")
     private String UPLOADED_FOLDER;
+    @Value("${file.UPLOADED_PATH}")
+    private String UPLOADED_PATH;
 
     @RequestMapping(value = UnifyApiUri.UserApi.API_CUSTOMER_INFO, method = RequestMethod.GET)
     public CommonResp<User> getCustomerInfo() {
+        LOGGER.info("getCustomerInfo");
         User user = mUserService.getCustomerInfo();
         if (user != null) {
             return CommonResp.success(user);
@@ -87,7 +90,7 @@ public class UserController {
             String pathString = UPLOADED_FOLDER + tempUrl;
             Path path = Paths.get(pathString);
             Files.write(path, bytes);
-            mUserService.updateUserHeader(tempUrl);
+            mUserService.updateUserHeader(UPLOADED_PATH + tempUrl);
             return JSONUtil.parse(CommonResp.success("result is ok")).toStringPretty();
         } catch (IOException e) {
             e.printStackTrace();

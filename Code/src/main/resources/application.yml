@@ -34,6 +34,7 @@ jwt:
   tokenHead: Bearer  #JWT负载中拿到开头
 file:
   UPLOADED_FOLDER: /my_computer/project/spring_flutter/image/
+  UPLOADED_PATH: /image/
 logging:
   level:
     root: info #日志配置DEBUG,INFO,WARN,ERROR
