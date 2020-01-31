@@ -1,10 +1,16 @@
 package com.tw.cloud.service.impl;
 
+import com.tw.cloud.bean.CommonResp;
 import com.tw.cloud.bean.user.CustomerInfoReply;
 import com.tw.cloud.bean.user.User;
+import com.tw.cloud.controller.UserController;
 import com.tw.cloud.mapper.UserMapper;
+import com.tw.cloud.service.RedisService;
 import com.tw.cloud.service.UserService;
 import com.tw.cloud.utils.JwtTokenUtil;
+import com.tw.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,6 +34,9 @@ import java.util.Date;
 @Service
 public class UserServiceImpl implements UserService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
+
+
     @Autowired
     private UserDetailsService mUserDetailsService;
 
@@ -46,6 +55,14 @@ public class UserServiceImpl implements UserService {
     @Value("${jwt.expirationRefreshToken}")
     private Long mExpirationRefreshToken;
 
+    @Autowired
+    private RedisService redisService;
+    @Value("${redis.key.prefix.authCode}")
+    private String REDIS_KEY_PREFIX_AUTH_CODE;
+    @Value("${redis.key.expire.authCode}")
+    private Long AUTH_CODE_EXPIRE_SECONDS;
+
+
     @Override
     public String register() {
         return null;
@@ -54,7 +71,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public CustomerInfoReply login(String username, String password) {
         UserDetails userDetails = mUserDetailsService.loadUserByUsername(username);
-        if(!mPasswordEncoder.matches(password,userDetails.getPassword())){
+        if (!mPasswordEncoder.matches(password, userDetails.getPassword())) {
             throw new BadCredentialsException("密码不正确");
         }
 //        if(!password.equals(userDetails.getPassword())){
@@ -64,7 +81,7 @@ public class UserServiceImpl implements UserService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = mJwtTokenUtil.generateToken(userDetails);
         String refreshToken = mJwtTokenUtil.generateRefreshToken(userDetails);
-        return new CustomerInfoReply(token,refreshToken,mExpiration,mExpirationRefreshToken);
+        return new CustomerInfoReply(token, refreshToken, mExpiration, mExpirationRefreshToken);
     }
 
     @Override
@@ -76,7 +93,7 @@ public class UserServiceImpl implements UserService {
         //将密码进行加密操作
         String encodePassword = mPasswordEncoder.encode(password);
         umsAdmin.setPassword(encodePassword);
-        int count = mUserMapper.insert(umsAdmin);
+//        int count = mUserMapper.insert(umsAdmin);
         return null;
     }
 
@@ -84,13 +101,14 @@ public class UserServiceImpl implements UserService {
     public void updateUserHeader(String headUrl) {
         UserDetails user = getUserDetails();
 
-        mUserMapper.updateUserHeader(user.getUsername(),headUrl);
+//        mUserMapper.updateUserHeader(user.getUsername(), headUrl);
     }
 
     @Override
     public User getCustomerInfo() {
         UserDetails user = getUserDetails();
-        return mUserMapper.selectUserByLoginName(user.getUsername());
+        return null;
+//        return mUserMapper.selectUserByLoginName(user.getUsername());
     }
 
     @Override
@@ -99,6 +117,31 @@ public class UserServiceImpl implements UserService {
         Authentication auth = ctx.getAuthentication();
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         return userDetails;
+    }
+
+    @Override
+    public void sendMobileCode(String mobilePhone) {
+        String code = StringUtils.randomCode();
+        LOGGER.info("MobilePhone:" + mobilePhone + "---code==" + code);
+        //验证码绑定手机号并存储到redis
+        redisService.set(REDIS_KEY_PREFIX_AUTH_CODE + mobilePhone, code);
+        redisService.expire(REDIS_KEY_PREFIX_AUTH_CODE + mobilePhone, AUTH_CODE_EXPIRE_SECONDS);
+    }
+
+
+    //对输入的验证码进行校验
+    @Override
+    public CommonResp verifyAuthCode(String telephone, String authCode) {
+        if (org.springframework.util.StringUtils.isEmpty(authCode)) {
+            return CommonResp.failed("请输入验证码");
+        }
+        String realAuthCode = redisService.get(REDIS_KEY_PREFIX_AUTH_CODE + telephone);
+        boolean result = authCode.equals(realAuthCode);
+        if (result) {
+            return CommonResp.success(null, "验证码校验成功");
+        } else {
+            return CommonResp.failed("验证码不正确");
+        }
     }
 
     @Override

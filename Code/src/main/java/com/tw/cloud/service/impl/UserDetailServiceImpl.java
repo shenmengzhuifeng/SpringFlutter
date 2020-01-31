@@ -23,7 +23,8 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = mUserMapper.selectUserByLoginName(username);
+//        User user = mUserMapper.selectUserByLoginName(username);
+        User user = null;
         if (user != null) {
             return new JwtUserDetail(user);
         }

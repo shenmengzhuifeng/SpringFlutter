@@ -65,16 +65,32 @@ public class UserController {
     @RequestMapping(value = UnifyApiUri.UserApi.API_AUTH_REGISTER,
             method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public CommonResp<CustomerInfoReply> register(@RequestBody AuthenticationRequest authenticationRequest) {
-        LOGGER.info("login info==>" + authenticationRequest.toString());
+        LOGGER.info("register info==>" + authenticationRequest.toString());
         CustomerInfoReply customerInfoReply = mUserService.register(authenticationRequest.getUsername(), authenticationRequest.getPassword());
         LOGGER.info("customerInfoReply info==>" + customerInfoReply.toString());
         return CommonResp.success(customerInfoReply);
     }
 
+    @RequestMapping(value = UnifyApiUri.UserApi.API_AUTH_SEND_MOBILE_PHONE_CODE,
+            method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public CommonResp sendMobileCode(@RequestParam("mobilePhone") String mobilePhone) {
+        LOGGER.info("sendMobileCode info==>" + mobilePhone);
+        mUserService.sendMobileCode(mobilePhone);
+        return CommonResp.success(null);
+    }
+
+    @RequestMapping(value = UnifyApiUri.UserApi.API_AUTH_LOGIN_BY_PHONE,
+            method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public CommonResp loginByPhone(@RequestParam("mobilePhone") String mobilePhone,@RequestParam("verifyCode") String verifyCode) {
+        LOGGER.info("loginByPhone info==>" + mobilePhone + "--verifyCode==",verifyCode);
+
+        return mUserService.verifyAuthCode(mobilePhone,verifyCode);
+    }
+
     @RequestMapping(value = UnifyApiUri.UserApi.API_UPDATE_CUSTOMER_INFO,
             method = RequestMethod.POST, produces = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String updateCustomerInfo(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()){
+        if (file.isEmpty()) {
             return JSONUtil.parse(CommonResp.failed("file can not null")).toStringPretty();
         }
         // Get the file and save it somewhere

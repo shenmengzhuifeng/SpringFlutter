@@ -27,10 +27,4 @@ public interface UserMapper {
     int updateByPrimaryKeySelective(User record);
 
     int updateByPrimaryKey(User record);
-
-    com.tw.cloud.bean.user.User selectUserByLoginName(@Param("loginName") String loginName);
-
-    void updateUserHeader(@Param("loginName") String loginName,@Param("headUrl") String headUrl);
-
-    int insert(com.tw.cloud.bean.user.User user);
 }

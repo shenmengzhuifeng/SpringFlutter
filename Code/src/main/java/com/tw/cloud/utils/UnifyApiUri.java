@@ -18,6 +18,8 @@ public class UnifyApiUri {
         public static final String API_AUTH_BASE = "/auth";
         public static final String API_AUTH_LOGIN = API_AUTH_BASE + "/login";
         public static final String API_AUTH_REGISTER = API_AUTH_BASE + "/register";
+        public static final String API_AUTH_SEND_MOBILE_PHONE_CODE = API_AUTH_BASE + "/sendMobileCode";
+        public static final String API_AUTH_LOGIN_BY_PHONE = API_AUTH_BASE + "/login_by_phone";
         public static final String API_AUTH_REFRESH_TOKEN = API_AUTH_BASE + "/refresh_token";
     }
 }
