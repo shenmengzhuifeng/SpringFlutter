@@ -1,9 +1,9 @@
 package com.tw.cloud.controller;
 
 import cn.hutool.json.JSONUtil;
+import com.tw.cloud.bean.User;
 import com.tw.cloud.bean.request.AuthenticationRequest;
 import com.tw.cloud.bean.user.CustomerInfoReply;
-import com.tw.cloud.bean.user.User;
 import com.tw.cloud.service.UserService;
 import com.tw.cloud.utils.ResultCode;
 import org.slf4j.Logger;
@@ -42,9 +42,9 @@ public class UserController {
     private String UPLOADED_PATH;
 
     @RequestMapping(value = UnifyApiUri.UserApi.API_CUSTOMER_INFO, method = RequestMethod.GET)
-    public CommonResp<User> getCustomerInfo() {
+    public CommonResp<com.tw.cloud.bean.User> getCustomerInfo() {
         LOGGER.info("getCustomerInfo");
-        User user = mUserService.getCustomerInfo();
+        com.tw.cloud.bean.User user = mUserService.getCustomerInfo();
         if (user != null) {
             return CommonResp.success(user);
         } else {
@@ -83,8 +83,7 @@ public class UserController {
             method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public CommonResp loginByPhone(@RequestParam("mobilePhone") String mobilePhone,@RequestParam("verifyCode") String verifyCode) {
         LOGGER.info("loginByPhone info==>" + mobilePhone + "--verifyCode==",verifyCode);
-
-        return mUserService.verifyAuthCode(mobilePhone,verifyCode);
+        return mUserService.loginByPhone(mobilePhone,verifyCode);
     }
 
     @RequestMapping(value = UnifyApiUri.UserApi.API_UPDATE_CUSTOMER_INFO,

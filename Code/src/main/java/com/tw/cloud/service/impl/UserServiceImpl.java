@@ -1,8 +1,9 @@
 package com.tw.cloud.service.impl;
 
 import com.tw.cloud.bean.CommonResp;
+import com.tw.cloud.bean.User;
+import com.tw.cloud.bean.UserExample;
 import com.tw.cloud.bean.user.CustomerInfoReply;
-import com.tw.cloud.bean.user.User;
 import com.tw.cloud.controller.UserController;
 import com.tw.cloud.mapper.UserMapper;
 import com.tw.cloud.service.RedisService;
@@ -24,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 用户服务实现类
@@ -86,13 +88,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CustomerInfoReply register(String username, String password) {
-        User umsAdmin = new User();
-        umsAdmin.setLoginName(username);
-        umsAdmin.setCreateTime(new Date());
-        //TODO 查询是否有相同用户名的用户
-        //将密码进行加密操作
-        String encodePassword = mPasswordEncoder.encode(password);
-        umsAdmin.setPassword(encodePassword);
+//        User umsAdmin = new User();
+//        umsAdmin.setLoginName(username);
+//        umsAdmin.setCreateTime(new Date());
+//        //TODO 查询是否有相同用户名的用户
+//        //将密码进行加密操作
+//        String encodePassword = mPasswordEncoder.encode(password);
+//        umsAdmin.setPassword(encodePassword);
 //        int count = mUserMapper.insert(umsAdmin);
         return null;
     }
@@ -128,20 +130,50 @@ public class UserServiceImpl implements UserService {
         redisService.expire(REDIS_KEY_PREFIX_AUTH_CODE + mobilePhone, AUTH_CODE_EXPIRE_SECONDS);
     }
 
+    @Override
+    public CommonResp loginByPhone(String telephone, String authCode) {
+        //验证验证码
+        if (!verifyAuthCode(authCode, telephone)) {
+            return CommonResp.failed("验证码错误");
+        }
+        UserExample userExample = new UserExample();
+        userExample.createCriteria().andMobilephoneEqualTo(telephone);
+
+        List<com.tw.cloud.bean.User> userList = mUserMapper.selectByExample(userExample);
+
+        String id = "";
+        if (userList != null && userList.size() > 0) {
+            com.tw.cloud.bean.User user = userList.get(0);
+            user.setLogintime(new Date());
+            id = user.getId() + "";
+            mUserMapper.updateByPrimaryKey(user);
+        } else {
+            com.tw.cloud.bean.User user = new com.tw.cloud.bean.User();
+            Date date = new Date();
+            user.setCreatetime(date);
+            user.setLogintime(date);
+            user.setMobilephone(telephone);
+            user.setLoginname(telephone);
+            user.setPassword(mPasswordEncoder.encode(telephone));
+            id = mUserMapper.insertSelective(user) + "";
+            LOGGER.info("result==",id);
+        }
+        UserDetails userDetails = mUserDetailsService.loadUserByUsername(id);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = mJwtTokenUtil.generateToken(userDetails);
+        String refreshToken = mJwtTokenUtil.generateRefreshToken(userDetails);
+        return CommonResp.success(new CustomerInfoReply(token, refreshToken, mExpiration, mExpirationRefreshToken), "登录成功");
+    }
+
 
     //对输入的验证码进行校验
-    @Override
-    public CommonResp verifyAuthCode(String telephone, String authCode) {
+    private boolean verifyAuthCode(String authCode, String telephone) {
         if (org.springframework.util.StringUtils.isEmpty(authCode)) {
-            return CommonResp.failed("请输入验证码");
+            return false;
         }
         String realAuthCode = redisService.get(REDIS_KEY_PREFIX_AUTH_CODE + telephone);
-        boolean result = authCode.equals(realAuthCode);
-        if (result) {
-            return CommonResp.success(null, "验证码校验成功");
-        } else {
-            return CommonResp.failed("验证码不正确");
-        }
+        return authCode.equals(realAuthCode);
     }
 
     @Override

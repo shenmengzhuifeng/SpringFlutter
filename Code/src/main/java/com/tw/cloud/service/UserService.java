@@ -1,8 +1,8 @@
 package com.tw.cloud.service;
 
 import com.tw.cloud.bean.CommonResp;
+import com.tw.cloud.bean.User;
 import com.tw.cloud.bean.user.CustomerInfoReply;
-import com.tw.cloud.bean.user.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -28,7 +28,7 @@ public interface UserService {
 
     void sendMobileCode(String mobilePhone);
 
-    CommonResp verifyAuthCode(String telephone, String authCode);
+    CommonResp loginByPhone(String telephone, String authCode);
 
     //刷新token
     String refresh(String refreshToken);

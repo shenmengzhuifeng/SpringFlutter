@@ -1,5 +1,6 @@
 package com.tw.cloud.bean.user;
 
+import com.tw.cloud.bean.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -13,7 +14,7 @@ import java.util.Collection;
  **/
 public class JwtUserDetail implements UserDetails {
 
-    private User mUser;
+    private com.tw.cloud.bean.User mUser;
 
 
     public JwtUserDetail(User user){
@@ -32,7 +33,7 @@ public class JwtUserDetail implements UserDetails {
 
     @Override
     public String getUsername() {
-        return mUser.getLoginName();
+        return mUser.getId() + "";
     }
 
     @Override
