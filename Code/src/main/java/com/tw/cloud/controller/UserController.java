@@ -41,6 +41,7 @@ public class UserController {
     @Value("${file.UPLOADED_PATH}")
     private String UPLOADED_PATH;
 
+
     @RequestMapping(value = UnifyApiUri.UserApi.API_CUSTOMER_INFO, method = RequestMethod.GET)
     public CommonResp<com.tw.cloud.bean.User> getCustomerInfo() {
         LOGGER.info("getCustomerInfo");

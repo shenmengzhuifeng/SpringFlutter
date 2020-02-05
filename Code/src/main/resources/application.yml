@@ -19,7 +19,14 @@ spring:
       stat-view-servlet: #访问监控网页的登录用户名和密码
         login-username: druid
         login-password: druid
-
+  mvc:
+    static-path-pattern: /images/**
+  resources:
+    static-locations: file:///System/Volumes/Data/my_computer/project/spring_flutter/image
+  servlet:
+    multipart:
+      enabled: true #开启文件上传
+      max-file-size: 10MB #限制文件上传大小为10M
 server:
   port: 8089 #服务运行端口
 
@@ -34,8 +41,8 @@ jwt:
   expirationRefreshToken: 54432000 #JWT的超期限时间(60*60*24*90)
   tokenHead: Bearer  #JWT负载中拿到开头
 file:
-  UPLOADED_FOLDER: /my_computer/project/spring_flutter/image/
-  UPLOADED_PATH: /image/
+  UPLOADED_FOLDER: /System/Volumes/Data/my_computer/project/spring_flutter/image/
+  UPLOADED_PATH: /images/
 logging:
   level:
     root: info #日志配置DEBUG,INFO,WARN,ERROR

@@ -12,6 +12,7 @@ public class UnifyApiUri {
         public static final String API_CUSTOMER_BASE = "/user";
         public static final String API_CUSTOMER_INFO = API_CUSTOMER_BASE + "/getCustomerInfo";
         public static final String API_UPDATE_CUSTOMER_INFO = API_CUSTOMER_BASE + "/updateCustomerInfo";
+        public static final String API_UPLOAD_GALLERY = API_CUSTOMER_BASE + "/uploadGallery";
 
 
 

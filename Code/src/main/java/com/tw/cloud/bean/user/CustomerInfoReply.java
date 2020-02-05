@@ -8,6 +8,8 @@ package com.tw.cloud.bean.user;
  **/
 public class CustomerInfoReply {
 
+    private int reply = 1;//0：实名 1：匿名
+
     private String token;
 
     private String refreshToken;
@@ -16,11 +18,17 @@ public class CustomerInfoReply {
 
     private Long refreshTokenExpireTime;
 
-    public CustomerInfoReply(String token, String refreshToken, Long tokenExpireTime, Long refreshTokenExpireTime) {
+    private String mobilePhone;
+
+    public CustomerInfoReply(int reply,String token, String refreshToken,
+                             Long tokenExpireTime, Long refreshTokenExpireTime,
+                             String mobilePhone) {
         this.token = token;
         this.refreshToken = refreshToken;
         this.tokenExpireTime = tokenExpireTime;
         this.refreshTokenExpireTime = refreshTokenExpireTime;
+        this.reply = reply;
+        this.mobilePhone = mobilePhone;
     }
 
     public String getToken() {
@@ -63,5 +71,21 @@ public class CustomerInfoReply {
                 ", tokenExpireTime=" + tokenExpireTime +
                 ", refreshTokenExpireTime=" + refreshTokenExpireTime +
                 '}';
+    }
+
+    public int getReply() {
+        return reply;
+    }
+
+    public void setReply(int reply) {
+        this.reply = reply;
+    }
+
+    public String getMobilePhone() {
+        return mobilePhone;
+    }
+
+    public void setMobilePhone(String mobilePhone) {
+        this.mobilePhone = mobilePhone;
     }
 }

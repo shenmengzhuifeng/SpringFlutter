@@ -83,7 +83,7 @@ public class UserServiceImpl implements UserService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = mJwtTokenUtil.generateToken(userDetails);
         String refreshToken = mJwtTokenUtil.generateRefreshToken(userDetails);
-        return new CustomerInfoReply(token, refreshToken, mExpiration, mExpirationRefreshToken);
+        return new CustomerInfoReply(0,token, refreshToken, mExpiration, mExpirationRefreshToken,userDetails.getUsername());
     }
 
     @Override
@@ -163,7 +163,8 @@ public class UserServiceImpl implements UserService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = mJwtTokenUtil.generateToken(userDetails);
         String refreshToken = mJwtTokenUtil.generateRefreshToken(userDetails);
-        return CommonResp.success(new CustomerInfoReply(token, refreshToken, mExpiration, mExpirationRefreshToken), "登录成功");
+        return CommonResp.success(new CustomerInfoReply(0,token, refreshToken,
+                mExpiration, mExpirationRefreshToken,telephone), "登录成功");
     }
 
 
